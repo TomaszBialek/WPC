@@ -1,4 +1,4 @@
 # Project exclude paths
 /api-ui/node_modules/
-/api-ui/dist/
+/api-ui/dist/main.js
 /api-ui/src/aws_export.js
