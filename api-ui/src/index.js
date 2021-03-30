@@ -2,18 +2,34 @@ import {hello} from './greet'
 import {aws_config} from './aws_export'
 
 import {
-	CognitoUserPool,
-	CognitoUserAttribute,
-	CognitoUser,
+    CognitoUserPool,
+    CognitoUserAttribute,
+    CognitoUser,
     AuthenticationDetails,
 } from 'amazon-cognito-identity-js';
 
+
+import S3 from 'aws-sdk/clients/s3';
+import AWS from 'aws-sdk';
+import {CognitoIdentityCredentials} from "aws-sdk";
+import { uuid } from 'uuidv4';
+
+AWS.config.region = aws_config.region;
 
 const userPool = new CognitoUserPool({
     UserPoolId: aws_config.userPoolId,
     ClientId: aws_config.clientId,
 });
 
+let order = [];
+
+const addToOrder = (key) => {
+    order.push(key);
+    return key;
+}
+
+
+///AUTH ############
 const register = (registerRequest) => {
     return new Promise((resolve, reject) => {
         const attributeList = [
@@ -78,6 +94,26 @@ const login = (loginRequest) => {
     });
 }
 
+const loadSavedCredentials = () => {
+    return new Promise((resolve, reject) => {
+        const user = userPool.getCurrentUser();
+
+        if (user == null) {
+            reject("User not available");
+        }
+
+        user.getSession((err, session) => {
+            if (err) {
+                reject(err);
+            }
+
+            resolve(session);
+
+        })
+
+    })
+}
+
 const getCurrentUser = () => {
     return new Promise((resolve, reject) => {
         const user = userPool.getCurrentUser();
@@ -108,9 +144,99 @@ const getCurrentUser = () => {
     })
 }
 
+const refreshAwsCredentials = (tokenData) => {
+    AWS.config.credentials = new CognitoIdentityCredentials({
+        IdentityPoolId: aws_config.identityPoolId,
+        Logins: {
+            [aws_config.cognitoCredentialKey]: tokenData.getIdToken().getJwtToken()
+        }
+    })
+}
+
+//// File storage ##################
+const listFiles = () => {
+    const s3 = new S3();
+    return new Promise((resolve, reject) => {
+        s3.listObjectsV2({
+            Bucket: aws_config.bucketName,
+            MaxKeys: 10
+        }, (err, data) => {
+            if (err) {
+                reject(err);
+            }
+
+            resolve(data.Contents.map(item => {
+                return {
+                    name: item.Key,
+                    size: item.Size,
+                }
+            }));
+        })
+    });
+}
+
+const uploadToS3 = (userId, file, onProgress) => {
+    return new Promise((resolve, reject) => {
+        const destKey = `uek-krakow/${userId}/images/${uuid()}/${file.name}`;
+        const params = {
+            Body: file,
+            Bucket: aws_config.bucketName,
+            Key: destKey,
+        }
+
+        const s3 = new S3();
+
+        s3.putObject(params, (err, data) => {
+            if (err) {
+                reject(err);
+            }
+
+            resolve(destKey);
+        }).on('httpUploadProgress', (progress) => {
+            const currentProgress = Math.round((progress.loaded / progress.total) * 100);
+            onProgress(currentProgress);
+            console.log(`current progress is: ${currentProgress}%`);
+        })
+    });
+}
+
+const getPresigendUrl = (key) => {
+    const params = {
+        Bucket: aws_config.bucketName,
+        Key: key
+    }
+
+    const s3 = new S3();
+
+    return s3.getSignedUrl('getObject', params);
+}
+
+///// Html operations
+const createElementFromString = (template) => {
+    const parent = document.createElement('div');
+    parent.innerHTML = template.trim();
+    return parent.firstChild;
+}
+
+const addToUploadedPreview = (url) => {
+    const itemTemplate = `
+    <li>
+        <img src="${url}" width="200"/>
+    </li>`;
+    const el = createElementFromString(itemTemplate);
+    const uploadedList = document.querySelector('.uploadedPreview');
+    uploadedList.appendChild(el);
+}
+
+const clearUploadArea = (filesInput, progressBarEl) => {
+    progressBarEl.style.width = `0%`;
+    progressBarEl.textContent = `0%`;
+    filesInput.value = '';
+}
+
 const registerBtn = document.querySelector('button.register');
 const registerRequestPayload = {
-    email: "fqwolnuqudaxmfxwib@twzhhq.online",
+    email: "qjmdaakhjhsqcjajgz@upived.online",
     password: "1234qwer",
     website: 'jkan.pl',
 }
@@ -124,7 +250,7 @@ registerBtn.addEventListener('click', () => {
 
 const confirmAccountBtn = document.querySelector('button.confirmAccount');
 const confirmAccountRequest = {
-    code: '843065',
+    code: '292062',
     email: registerRequestPayload.email,
 };
 confirmAccountBtn.addEventListener('click', () => {
@@ -141,13 +267,63 @@ const loginRequestPayload = {
 };
 loginBtn.addEventListener('click', () => {
     login(loginRequestPayload)
-        .then(result => console.log(result))
+        .then(data => { refreshAwsCredentials(data)})
         .catch(err => console.log(err))
     ;
 });
 
+const listFilesBtn = document.querySelector('button.listFiles');
+listFilesBtn.addEventListener('click', () => {
+    listFiles.then(myFiles => console.log(myFiles))
+});
+
+const uploadFileBtn = document.querySelector('div.upload .upload__btn');
+uploadFileBtn.addEventListener('click', () => {
+    const filesInput = document.querySelector('div.upload .upload__input');
+    if (!filesInput.files.length > 0) {
+        console.log('no files were choosen');
+        return;
+    }
+
+    const progressBarEl = document.querySelector('.upload__progress');
+
+    const toBeUploadedFiles = [...filesInput.files];
+    const userId = AWS.config.credentials.identityId;
+    toBeUploadedFiles.forEach((file, i) => {
+        uploadToS3(userId, file, (currentProgress) => {
+            progressBarEl.style.width = `${currentProgress}%`;
+            progressBarEl.textContent = `uploading ... ${currentProgress} %`;
+        })
+            .then(res => addToOrder(res))
+            .then(res => getPresigendUrl(res))
+            .then(url => addToUploadedPreview(url))
+            .finally(() => clearUploadArea(filesInput, progressBarEl))
+        ;
+    })
+});
+
+const orderAnimationBtn = document.querySelector('button.orderAnimation');
+
+orderAnimationBtn.addEventListener('click', () => {
+    const orderRequest = {
+        email: registerRequestPayload.email,
+        photos: [...order]
+    }
+    console.log(orderRequest);
+    console.log('i going to send it via API');
+});
+
+const cancelOrderBtn = document.querySelector('button.cancelOrder');
+cancelOrderBtn.addEventListener('click', () => {
+    order = [];
+});
+
 
 (() => {
+    loadSavedCredentials()
+        .then(session => refreshAwsCredentials(session))
+        .catch(err => console.log('cant reload credentials'));
+
     getCurrentUser()
         .then(profile => hello(profile.email))
         .catch(err => hello('Guest'))

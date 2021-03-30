@@ -10,6 +10,20 @@
             </Attribute>
           </value>
         </entry>
+        <entry key="\api-ui\src\aws_export.js">
+          <value>
+            <Attribute>
+              <option name="separator" value=":" />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="\api-ui\src\index.js">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
       </map>
     </option>
   </component>
