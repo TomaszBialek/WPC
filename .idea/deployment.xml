@@ -1,12 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
-  <component name="PublishConfigData" autoUpload="Always" serverName="215903@sokrates.edu.jkan.pl:22" remoteFilesAllowedToDisappearOnAutoupload="false">
+  <component name="PublishConfigData" autoUpload="Always" serverName="215903@sokrates.edu.jkan.pl:22">
     <serverData>
       <paths name="215903@sokrates.edu.jkan.pl:22">
         <serverdata>
           <mappings>
-            <mapping deploy="/home/215903/wpc" local="$PROJECT_DIR$" />
+            <mapping deploy="/" local="$PROJECT_DIR$" web="/" />
           </mappings>
+          <excludedPaths>
+            <excludedPath path="/api-ui/node_modules" />
+          </excludedPaths>
         </serverdata>
       </paths>
     </serverData>
