@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "build": "npx webpack --mode production",
-    "release": "aws s3 sync ./dist s3://${APP_BUCKET}/ --acl public-read",
+    "release": "aws s3 sync ./dist s3://${APP_BUCKET}/ --acl public-read --region eu-central-1",
     "deploy": "npm run build && npm run release"
   },
   "author": "",

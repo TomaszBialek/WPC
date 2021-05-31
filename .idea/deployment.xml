@@ -9,6 +9,7 @@
           </mappings>
           <excludedPaths>
             <excludedPath path="/api-ui/node_modules" />
+            <excludedPath path="/app-ui/node_modules" />
           </excludedPaths>
         </serverdata>
       </paths>

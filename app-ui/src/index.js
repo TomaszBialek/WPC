@@ -238,7 +238,7 @@ const orderAnimation = (token, orderRequest) => {
     return fetch(`${aws_config.apiBaseUrl}/orders`, {
         method: 'POST',
         headers: {
-            'Authentication': token,
+            'Authorization': token,
             'Content-Type': 'application/json'
         },
         body: JSON.stringify(orderRequest)
@@ -270,7 +270,7 @@ const clearUploadArea = (filesInput, progressBarEl) => {
 
 const registerBtn = document.querySelector('button.register');
 const registerRequestPayload = {
-    email: "qjmdaakhjhsqcjajgz@upived.online",
+    email: "bgc65182@eoopy.com",
     password: "1234qwer",
     website: 'jkan.pl',
 }
