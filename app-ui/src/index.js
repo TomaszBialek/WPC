@@ -270,7 +270,7 @@ const clearUploadArea = (filesInput, progressBarEl) => {
 
 const registerBtn = document.querySelector('button.register');
 const registerRequestPayload = {
-    email: "bgc65182@eoopy.com",
+    email: "tajwan333@gmail.com",
     password: "1234qwer",
     website: 'jkan.pl',
 }
@@ -284,7 +284,7 @@ registerBtn.addEventListener('click', () => {
 
 const confirmAccountBtn = document.querySelector('button.confirmAccount');
 const confirmAccountRequest = {
-    code: '292062',
+    code: '170477',
     email: registerRequestPayload.email,
 };
 confirmAccountBtn.addEventListener('click', () => {
